@@ -1,0 +1,51 @@
+[versions]
+agp = "8.6.1"
+azureCognitiveservicesFaceapi = "1.0.0-beta"
+dagger = "2.28.3"
+googleMaterial = "1.0.0"
+gradle = "7.0.4"
+junit = "4.13.2"
+junitVersion = "1.2.1"
+espressoCore = "3.6.1"
+appcompat = "1.7.0"
+kotlinxCoroutinesCore = "1.7.3"
+kotlinxCoroutinesAndroid = "1.7.3"
+lombok = "1.18.36"
+material = "1.12.0"
+activity = "1.9.3"
+constraintlayout = "2.1.4"
+okhttp = "4.9.3"
+orgJacocoCore = "0.8.7"
+pagingRuntime = "3.1.1"
+retrofit = "2.11.0"
+viewpager2 = "1.1.0"
+firebaseCrashlyticsBuildtools = "3.0.2"
+junitJupiter = "5.8.1"
+uiautomator = "2.3.0"
+foundationAndroid = "1.7.5"
+pagingCommonAndroid = "3.3.4"
+
+[libraries]
+converter-gson = { module = "com.squareup.retrofit2:converter-gson" }
+gradle = { module = "com.android.tools.build:gradle", version.ref = "gradle" }
+junit = { group = "junit", name = "junit", version.ref = "junit" }
+ext-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
+espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
+appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
+lombok = { module = "org.projectlombok:lombok", version.ref = "lombok" }
+material = { group = "com.google.android.material", name = "material", version.ref = "material" }
+activity = { group = "androidx.activity", name = "activity", version.ref = "activity" }
+constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
+material-v100 = { module = "com.google.android.material:material", version.ref = "googleMaterial" }
+okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
+org-jacoco-core = { module = "org.jacoco:org.jacoco.core", version.ref = "orgJacocoCore" }
+retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
+viewpager2 = { module = "androidx.viewpager2:viewpager2", version.ref = "viewpager2" }
+firebase-crashlytics-buildtools = { group = "com.google.firebase", name = "firebase-crashlytics-buildtools", version.ref = "firebaseCrashlyticsBuildtools" }
+junit-jupiter = { group = "org.junit.jupiter", name = "junit-jupiter", version.ref = "junitJupiter" }
+uiautomator = { group = "androidx.test.uiautomator", name = "uiautomator", version.ref = "uiautomator" }
+foundation-android = { group = "androidx.compose.foundation", name = "foundation-android", version.ref = "foundationAndroid" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+
