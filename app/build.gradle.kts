@@ -48,4 +48,7 @@ dependencies {
     implementation(libs.okhttp)
     implementation(libs.lombok)
     annotationProcessor(libs.lombok)
+
+    implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar"))))
+    implementation(files("libs/YouTubeAndroidPlayerApi.jar"))
 }
