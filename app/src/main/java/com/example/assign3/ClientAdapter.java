@@ -56,6 +56,14 @@ public class ClientAdapter extends RecyclerView.Adapter<ClientAdapter.ClientView
         holder.checkbox2.setText("Inactive");
         holder.checkbox3.setText("Pending");
 
+        // Set OnClickListener for the "Tasks" button
+        holder.tasksButton.setOnClickListener(v -> {
+            Intent intent = new Intent(context, TaskActivity.class);
+            intent.putExtra("clientId", client.getClientId()); // Pass the client ID
+            intent.putExtra("clientName", client.getFirstName() + " " + client.getLastName()); // Pass the client name
+            context.startActivity(intent);
+        });
+
         // Set OnClickListener to navigate to DetailActivity on item click
         holder.itemView.setOnClickListener(v -> {
             // Retrieve the auth token from SharedPreferences
@@ -76,6 +84,7 @@ public class ClientAdapter extends RecyclerView.Adapter<ClientAdapter.ClientView
     }
 
     public static class ClientViewHolder extends RecyclerView.ViewHolder {
+        Button tasksButton;
         ImageView photo;
         TextView name, address;
         Button statusButton;
@@ -89,6 +98,7 @@ public class ClientAdapter extends RecyclerView.Adapter<ClientAdapter.ClientView
             address = itemView.findViewById(R.id.clientAddress);
             statusButton = itemView.findViewById(R.id.statusButton);
             statusCheckboxes = itemView.findViewById(R.id.statusCheckboxes);
+            tasksButton = itemView.findViewById(R.id.tasksButton);
             checkbox1 = itemView.findViewById(R.id.statusCheckbox1);
             checkbox2 = itemView.findViewById(R.id.statusCheckbox2);
             checkbox3 = itemView.findViewById(R.id.statusCheckbox3);

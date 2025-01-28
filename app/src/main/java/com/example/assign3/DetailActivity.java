@@ -54,6 +54,12 @@ public class DetailActivity extends AppCompatActivity {
         emailText = findViewById(R.id.emailText);
         phoneText = findViewById(R.id.phoneText);
 
+        // Back button click listener
+        findViewById(R.id.backButton).setOnClickListener(v -> {
+            // Go back to the previous activity
+            finish();
+        });
+
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
