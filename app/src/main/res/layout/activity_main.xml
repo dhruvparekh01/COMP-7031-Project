@@ -5,10 +5,12 @@
     android:orientation="vertical"
     android:padding="16dp">
 
+<!--    Hide Button -->
     <Button
         android:id="@+id/addClientButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:visibility="gone"
         android:drawableLeft="@drawable/ic_add_client"
         android:text="Add Client"
         style="@style/CustomButton"

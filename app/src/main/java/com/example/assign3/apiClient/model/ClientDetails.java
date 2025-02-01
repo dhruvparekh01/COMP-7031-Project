@@ -27,4 +27,5 @@ public class ClientDetails {
         this.email = email;
         this.phone = phone;
     }
+
 }
