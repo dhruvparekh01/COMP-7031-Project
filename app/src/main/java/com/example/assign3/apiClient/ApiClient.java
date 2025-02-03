@@ -9,7 +9,10 @@ import com.example.assign3.R;
 import com.example.assign3.apiClient.model.Client;
 import com.example.assign3.apiClient.model.LoginResponse;
 import com.example.assign3.apiClient.model.PostClientResponse;
+import com.example.assign3.apiClient.model.PostTaskResponse;
 import com.example.assign3.apiClient.model.SignupResponse;
+import com.example.assign3.apiClient.model.Task;
+import com.example.assign3.apiClient.model.TaskDetails;
 
 import okhttp3.*;
 import org.json.JSONArray;
@@ -244,6 +247,137 @@ public class ApiClient {
                 e.printStackTrace();
             }
             return new PostClientResponse(item, responseCode);
+        });
+    }
+
+
+    public CompletableFuture<PostTaskResponse> postTaskDetails(TaskDetails taskDetails, String token) {
+        return CompletableFuture.supplyAsync(() -> {
+            TaskDetails item = null;
+            int responseCode = 500;
+            try {
+                JSONObject jsonObject = new JSONObject();
+                jsonObject.put("client_id", taskDetails.getClientId());
+                jsonObject.put("reminder_name", taskDetails.getReminderName());
+                jsonObject.put("task_type", taskDetails.getTaskType());
+                jsonObject.put("date_time", taskDetails.getDateTime());
+                jsonObject.put("repeat_days", taskDetails.getRepeatDays());
+                jsonObject.put("notes", taskDetails.getNotes());
+                jsonObject.put("file_path", taskDetails.getFilePath());
+                RequestBody body = RequestBody.create(jsonObject.toString(), JSON);
+                Request request = new Request.Builder()
+                        .url(SERVER_HOSTNAME + "/tasks")
+                        .addHeader("Authorization", token)
+                        .post(body)
+                        .build();
+                try (Response httpResponse = client.newCall(request).execute()) {
+                    responseCode = httpResponse.code();
+                    if (httpResponse.isSuccessful() && httpResponse.code() == 200) {
+                        JSONObject taskJson = new JSONObject(httpResponse.body().string());
+                        item = new TaskDetails(
+                                taskJson.getInt("client_id"),
+                                taskJson.getString("reminder_name"),
+                                taskJson.getString("task_type"),
+                                taskJson.getString("date_time"),
+                                taskJson.getString("repeat_days"),
+                                taskJson.getString("notes"),
+                                taskJson.getString("file_path")
+                        );
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return new PostTaskResponse(item, responseCode);
+        });
+
+    }
+
+    public CompletableFuture<List<Task>> getTasks(int clientId, String token) {
+        return CompletableFuture.supplyAsync(() -> {
+            List<Task> tasks = new ArrayList<>();
+            try {
+                Request request = new Request.Builder()
+                        .url(SERVER_HOSTNAME + "/tasks/pending/" + clientId)
+                        .addHeader("Authorization", token)
+                        .build();
+                try (Response httpResponse = client.newCall(request).execute()) {
+                    if (httpResponse.isSuccessful() && httpResponse.code() == 200) {
+                        JSONArray responseJson = new JSONArray(httpResponse.body().string());
+                        for (int i = 0; i < responseJson.length(); i++) {
+                            JSONObject taskJson = responseJson.getJSONObject(i);
+                            tasks.add(new Task(
+                                    taskJson.getInt("id"),
+                                    taskJson.getInt("client_id"),
+                                    taskJson.getString("reminder_name"),
+                                    taskJson.getString("task_type"),
+                                    taskJson.getString("date_time"),
+                                    taskJson.getString("repeat_days"),
+                                    taskJson.getString("notes"),
+                                    taskJson.getString("file_path")
+                            ));
+                        }
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return tasks;
+        });
+    }
+
+    public CompletableFuture<TaskDetails> getTaskDetails(int taskId, String token) {
+        return CompletableFuture.supplyAsync(() -> {
+            TaskDetails item = null;
+            try {
+                Request request = new Request.Builder()
+                        .url(SERVER_HOSTNAME + "/tasks/" + taskId)
+                        .addHeader("Authorization", token)
+                        .build();
+                try {
+                    Response httpResponse = client.newCall(request).execute();
+                    if (httpResponse.isSuccessful() && httpResponse.code() == 200) {
+                        JSONObject taskJson = new JSONObject(httpResponse.body().string());
+                        item = new TaskDetails(
+                                taskJson.getInt("client_id"),
+                                taskJson.getString("reminder_name"),
+                                taskJson.getString("task_type"),
+                                taskJson.getString("date_time"),
+                                taskJson.getString("repeat_days"),
+                                taskJson.getString("notes"),
+                                taskJson.getString("file_path")
+                        );
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return item;
+        });
+    }
+
+//    Delete Task
+    public CompletableFuture<Void> deleteTask(String token, int taskId) {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                Request request = new Request.Builder()
+                        .url(SERVER_HOSTNAME + "/tasks/" + taskId)
+                        .addHeader("Authorization", token)
+                        .delete()
+                        .build();
+                try (Response httpResponse = client.newCall(request).execute()) {
+                    if (httpResponse.isSuccessful() && httpResponse.code() == 200) {
+                        return null;
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return null;
         });
     }
 
