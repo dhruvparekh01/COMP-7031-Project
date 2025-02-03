@@ -28,6 +28,7 @@
         <activity android:name=".FilterActivity" />
         <activity android:name=".AddClientActivity" />
         <activity android:name=".TaskActivity" />
+        <activity android:name=".TaskDetailActivity"/>
         <activity android:name=".LoginActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
