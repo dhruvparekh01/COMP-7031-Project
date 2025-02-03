@@ -10,24 +10,39 @@
     <EditText
         android:id="@+id/reminderName"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="48dp"
         android:hint="Reminder Name"
         android:autofillHints="Lunch Tomorrow"
         android:inputType="text" />
+
+    <!-- Task Type Dropdown -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:text="Task Type:"
+        android:textSize="16sp" />
+
+    <Spinner
+        android:id="@+id/taskTypeSpinner"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        />
 
     <!-- Date and Time Selection -->
     <Button
         android:id="@+id/selectDateTimeButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Select Date and Time" />
+        android:text="Select Date and Time"
+        android:layout_marginTop="20dp"/>
 
     <!-- Selected Date-Time Display -->
     <TextView
         android:id="@+id/selectedDateTimeText"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:paddingTop="8dp"
+
         android:text="No date and time selected"
         android:textSize="16sp" />
 
@@ -35,7 +50,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:paddingTop="8dp"
+        android:layout_marginTop="20dp"
         android:text="Repeat On:"
         android:textSize="16sp" />
 
@@ -44,8 +59,7 @@
         android:orientation="horizontal"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:gravity="center_horizontal"
-        android:paddingTop="8dp">
+        android:gravity="center_horizontal">
 
         <CheckBox
             android:id="@+id/repeatSunday"
@@ -70,7 +84,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center_horizontal"
-        android:paddingTop="8dp">
+>
 
         <CheckBox
             android:id="@+id/repeatWednesday"
@@ -94,12 +108,45 @@
             android:text="Sat" />
     </LinearLayout>
 
+    <!-- Notes Section -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:text="Notes:"
+        android:textSize="16sp" />
+
+    <EditText
+        android:id="@+id/notesField"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:hint="Add additional details..."
+        android:inputType="textMultiLine"
+        android:minLines="1"
+        android:maxLines="5" />
+
+    <!-- File Selection -->
+    <Button
+        android:id="@+id/selectFileButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Select Video File"
+        android:layout_marginTop="20dp"/>
+
+    <TextView
+        android:id="@+id/selectedFilePath"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingTop="8dp"
+        android:text="No file selected"
+        android:textSize="16sp" />
+
     <!-- Buttons -->
     <LinearLayout
         android:orientation="horizontal"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:paddingTop="16dp"
+        android:layout_marginTop="20dp"
         android:gravity="end">
 
         <Button

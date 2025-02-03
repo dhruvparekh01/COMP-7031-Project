@@ -59,8 +59,11 @@ public class ClientAdapter extends RecyclerView.Adapter<ClientAdapter.ClientView
         // Set OnClickListener for the "Tasks" button
         holder.tasksButton.setOnClickListener(v -> {
             Intent intent = new Intent(context, TaskActivity.class);
+            SharedPreferences sharedPreferences = context.getSharedPreferences("LoginPrefs", Context.MODE_PRIVATE);
+            String authToken = sharedPreferences.getString("token", null);
             intent.putExtra("clientId", client.getClientId()); // Pass the client ID
             intent.putExtra("clientName", client.getFirstName() + " " + client.getLastName()); // Pass the client name
+            intent.putExtra("authTok", authToken);
             context.startActivity(intent);
         });
 
