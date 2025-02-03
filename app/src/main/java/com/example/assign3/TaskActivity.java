@@ -1,12 +1,22 @@
 package com.example.assign3;
 
+import android.Manifest;
+import android.app.AlarmManager;
 import android.app.DatePickerDialog;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.TimePickerDialog;
+import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
+import android.net.ParseException;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.provider.Settings;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -19,6 +29,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -34,6 +46,7 @@ import org.json.JSONObject;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
@@ -61,6 +74,25 @@ public class TaskActivity extends AppCompatActivity {
         TextView taskInfoTextView = findViewById(R.id.clientNameTask); // Assuming you have a TextView with this ID
         taskInfoTextView.setText(clientName);
 
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.POST_NOTIFICATIONS}, 101);
+            }
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+            if (!alarmManager.canScheduleExactAlarms()) {
+                AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                builder.setTitle("Exact Alarm Permission Required")
+                        .setMessage("This app needs permission to schedule exact alarms for reminders. Please enable it in settings.")
+                        .setPositiveButton("Go to Settings", (dialog, which) -> {
+                            Intent intent_2 = new Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM);
+                            startActivity(intent_2);
+                        })
+                        .setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss())
+                        .show();
+            }
+        }
 
 
         // Back button click listener
@@ -73,6 +105,7 @@ public class TaskActivity extends AppCompatActivity {
 
         // Add Task button logic
         findViewById(R.id.addTask).setOnClickListener(v -> showAddTaskDialog());
+        createNotificationChannel();
     }
 
     private void populateSpinner(Spinner taskTypeSpinner) {
@@ -264,6 +297,20 @@ public class TaskActivity extends AppCompatActivity {
 
             uploadTaskToDb(taskDetails);
 
+            // Convert selected date-time to milliseconds
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault());
+            long reminderTime = 0;
+            try {
+                Date date = sdf.parse(date_time);
+                if (date != null) {
+                    reminderTime = date.getTime();
+                }
+            } catch (ParseException | java.text.ParseException e) {
+                e.printStackTrace();
+            }
+            // Schedule notification at the selected time
+            scheduleNotification(name, notes, reminderTime, taskDetails.getId());
+
             dialog.dismiss();
 
             populateList();
@@ -271,5 +318,40 @@ public class TaskActivity extends AppCompatActivity {
         });
 
         dialog.show();
+    }
+
+    private void createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            CharSequence name = "TaskReminderChannel";
+            String description = "Channel for task reminder notifications";
+            int importance = NotificationManager.IMPORTANCE_HIGH;
+            NotificationChannel channel = new NotificationChannel("TASK_REMINDER", name, importance);
+            channel.setDescription(description);
+
+            NotificationManager notificationManager = getSystemService(NotificationManager.class);
+            notificationManager.createNotificationChannel(channel);
+        }
+    }
+
+    private void scheduleNotification(String taskTitle, String taskDetails, long triggerTime, int taskId) {
+        Intent intent = new Intent(this, NotificationReceiver.class);
+        intent.putExtra("taskTitle", taskTitle);
+        intent.putExtra("taskDetails", taskDetails);
+        intent.putExtra("taskId", taskId);
+
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(
+                this, taskId, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
+        AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            if (alarmManager.canScheduleExactAlarms()) {
+                alarmManager.setExact(AlarmManager.RTC_WAKEUP, triggerTime, pendingIntent);
+            } else {
+                Toast.makeText(this, "Exact alarm permission required. Enable it in settings.", Toast.LENGTH_LONG).show();
+            }
+        } else {
+            alarmManager.setExact(AlarmManager.RTC_WAKEUP, triggerTime, pendingIntent);
+        }
+
     }
 }

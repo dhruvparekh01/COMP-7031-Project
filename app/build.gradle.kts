@@ -43,6 +43,8 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
+    implementation ("androidx.core:core-ktx:1.9.0")
+    implementation ("com.google.android.exoplayer:exoplayer:2.19.0")
 
     // Add OkHttpClient dependency
     implementation(libs.okhttp)

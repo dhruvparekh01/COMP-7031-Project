@@ -40,6 +40,7 @@ public class TaskDetailActivity extends AppCompatActivity {
         taskId = getIntent().getIntExtra("taskId", 2);
         authTok = getIntent().getStringExtra("authTok");
 
+
         initializeViews();
         getTaskDetails();
         setClientDetails();
