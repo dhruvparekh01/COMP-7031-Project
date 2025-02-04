@@ -16,7 +16,9 @@ public class    NotificationReceiver extends BroadcastReceiver {
 
         Intent notificationIntent = new Intent(context, TaskDetailActivity.class);
         notificationIntent.putExtra("taskId", taskId);
-        notificationIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        notificationIntent.putExtra("taskTitle", taskTitle);
+        notificationIntent.putExtra("taskNotes", taskNotes);
+        notificationIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
 
         PendingIntent pendingIntent = PendingIntent.getActivity(
                 context, taskId, notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE

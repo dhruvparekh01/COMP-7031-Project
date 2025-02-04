@@ -1,195 +1,160 @@
-<?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
 
-<!--    Back button -->
+    <!-- Back Button -->
     <Button
-        android:layout_width="100dp"
-        android:layout_height="60dp"
-        android:text="Back"
         android:id="@+id/btnBack"
-        android:layout_marginTop="16dp"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"/>
-
-
-    <TextView
-        android:id="@+id/tvClientNameLabel"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:text="Client Name"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        android:layout_marginTop="16dp"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"
-        app:layout_constraintTop_toBottomOf="@id/btnBack"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"/>
-
-    <TextView
-        android:id="@+id/tvClientName"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:text="John Doe"
-        android:textSize="18sp"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"
-        app:layout_constraintTop_toBottomOf="@id/tvClientNameLabel"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"/>
-
-
-    <TextView
-        android:id="@+id/tvReminderNameLabel"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Reminder Name"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        android:layout_marginTop="16dp"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"
-        app:layout_constraintTop_toBottomOf="@id/tvClientName"
-        app:layout_constraintStart_toStartOf="parent"/>
+        android:text="Back"
+        android:layout_marginBottom="10dp"
+        android:backgroundTint="@color/black"
+        android:textColor="@android:color/white"/>
 
-
-    <TextView
-        android:id="@+id/tvReminderName"
-        android:layout_width="0dp"
+    <!-- Scrollable Task Details -->
+    <ScrollView
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Reminder Name: Future task"
-        android:textSize="16sp"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"
-        app:layout_constraintTop_toBottomOf="@id/tvReminderNameLabel"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"/>
+        android:layout_weight="1">
 
-    <TextView
-        android:id="@+id/tvTaskTypeLabel"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Task Type"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="16dp"
-        app:layout_constraintTop_toBottomOf="@id/tvReminderName"
-        app:layout_constraintStart_toStartOf="parent"/>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="8dp">
 
-    <TextView
-        android:id="@+id/tvTaskType"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:text="Fitness"
-        android:textSize="16sp"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"
-        app:layout_constraintTop_toBottomOf="@id/tvTaskTypeLabel"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"/>
+            <!-- Client Name -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Client Name:"
+                android:textStyle="bold"
+                android:textSize="16sp"/>
 
-    <TextView
-        android:id="@+id/tvDateTimeLabel"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Date and Time"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        android:layout_marginTop="16dp"
-        android:layout_marginStart="16dp"
-        app:layout_constraintTop_toBottomOf="@id/tvTaskType"
-        app:layout_constraintStart_toStartOf="parent"/>
+            <TextView
+                android:id="@+id/tvClientName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="N/A"
+                android:textSize="14sp"
+                android:paddingBottom="8dp"/>
 
-    <TextView
-        android:id="@+id/tvDateTime"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:text="2025-02-02 17:40:00"
-        android:textSize="16sp"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"
-        app:layout_constraintTop_toBottomOf="@id/tvDateTimeLabel"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"/>
+            <!-- Reminder Name -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Reminder Name:"
+                android:textStyle="bold"
+                android:textSize="16sp"/>
 
-    <TextView
-        android:id="@+id/tvRepeatDaysLabel"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Repeat Days"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        android:layout_marginTop="16dp"
-        android:layout_marginStart="16dp"
-        app:layout_constraintTop_toBottomOf="@id/tvDateTime"
-        app:layout_constraintStart_toStartOf="parent"/>
+            <TextView
+                android:id="@+id/tvReminderName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="N/A"
+                android:textSize="14sp"
+                android:paddingBottom="8dp"/>
 
+            <!-- Task Type -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Task Type:"
+                android:textStyle="bold"
+                android:textSize="16sp"/>
 
-    <TextView
-        android:id="@+id/tvRepeatDays"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:text="Thurs"
-        android:textSize="16sp"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"
-        app:layout_constraintTop_toBottomOf="@id/tvRepeatDaysLabel"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"/>
+            <TextView
+                android:id="@+id/tvTaskType"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="N/A"
+                android:textSize="14sp"
+                android:paddingBottom="8dp"/>
 
-    <TextView
-        android:id="@+id/tvNotesLabel"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Notes"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        android:layout_marginTop="16dp"
-        android:layout_marginStart="16dp"
-        app:layout_constraintTop_toBottomOf="@id/tvRepeatDays"
-        app:layout_constraintStart_toStartOf="parent"/>
+            <!-- Date and Time -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Date and Time:"
+                android:textStyle="bold"
+                android:textSize="16sp"/>
 
-    <TextView
-        android:id="@+id/tvNotes"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:text="Call client regarding project status"
-        android:textSize="16sp"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"
-        app:layout_constraintTop_toBottomOf="@id/tvNotesLabel"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"/>
+            <TextView
+                android:id="@+id/tvDateTime"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="N/A"
+                android:textSize="14sp"
+                android:paddingBottom="8dp"/>
 
-    <TextView
-        android:id="@+id/tvFilePathLabel"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="File Path"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        android:layout_marginTop="16dp"
-        android:layout_marginStart="16dp"
-        app:layout_constraintTop_toBottomOf="@id/tvNotes"
-        app:layout_constraintStart_toStartOf="parent"/>
+            <!-- Repeat Days -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Repeat Days:"
+                android:textStyle="bold"
+                android:textSize="16sp"/>
 
-    <TextView
-        android:id="@+id/tvFilePath"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:text="/uploads/contract_123.pdf"
-        android:textSize="16sp"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"
-        app:layout_constraintTop_toBottomOf="@id/tvFilePathLabel"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"/>
+            <TextView
+                android:id="@+id/tvRepeatDays"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="N/A"
+                android:textSize="14sp"
+                android:paddingBottom="8dp"/>
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+            <!-- Notes -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Notes:"
+                android:textStyle="bold"
+                android:textSize="16sp"/>
+
+            <TextView
+                android:id="@+id/tvNotes"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="N/A"
+                android:textSize="14sp"
+                android:paddingBottom="8dp"/>
+
+            <!-- File Path -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="File Path:"
+                android:textStyle="bold"
+                android:textSize="16sp"/>
+
+            <TextView
+                android:id="@+id/tvFilePath"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="N/A"
+                android:textSize="14sp"
+                android:paddingBottom="8dp"/>
+        </LinearLayout>
+    </ScrollView>
+
+    <!-- ExoPlayer Video Player at Bottom -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="250dp"
+        android:layout_gravity="bottom">
+
+        <com.google.android.exoplayer2.ui.PlayerView
+            android:id="@+id/exoPlayerView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="#000000"
+            app:use_controller="true"
+            app:resize_mode="fit"/>
+    </FrameLayout>
+
+</LinearLayout>
