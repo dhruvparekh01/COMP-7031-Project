@@ -1,12 +1,22 @@
 package com.example.assign3;
 
+import android.Manifest;
+import android.app.AlarmManager;
 import android.app.DatePickerDialog;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.TimePickerDialog;
+import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
+import android.net.ParseException;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.provider.Settings;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -19,6 +29,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -34,6 +46,8 @@ import org.json.JSONObject;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
@@ -61,6 +75,25 @@ public class TaskActivity extends AppCompatActivity {
         TextView taskInfoTextView = findViewById(R.id.clientNameTask); // Assuming you have a TextView with this ID
         taskInfoTextView.setText(clientName);
 
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.POST_NOTIFICATIONS}, 101);
+            }
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+            if (!alarmManager.canScheduleExactAlarms()) {
+                AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                builder.setTitle("Exact Alarm Permission Required")
+                        .setMessage("This app needs permission to schedule exact alarms for reminders. Please enable it in settings.")
+                        .setPositiveButton("Go to Settings", (dialog, which) -> {
+                            Intent intent_2 = new Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM);
+                            startActivity(intent_2);
+                        })
+                        .setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss())
+                        .show();
+            }
+        }
 
 
         // Back button click listener
@@ -73,6 +106,7 @@ public class TaskActivity extends AppCompatActivity {
 
         // Add Task button logic
         findViewById(R.id.addTask).setOnClickListener(v -> showAddTaskDialog());
+        createNotificationChannel();
     }
 
     private void populateSpinner(Spinner taskTypeSpinner) {
@@ -236,40 +270,120 @@ public class TaskActivity extends AppCompatActivity {
             String taskType = taskTypeSpinner.getSelectedItem().toString();
             String filePath = selectedFilePath.getText().toString();
 
-
             if (name.isEmpty() || dateTime.equals("No date and time selected")) {
                 Toast.makeText(TaskActivity.this, "Please fill all fields", Toast.LENGTH_SHORT).show();
                 return;
             }
 
-            // Create a list to store selected days
-            ArrayList<String> selectedDays = new ArrayList<>();
+            // Extract selected days
+            List<Integer> selectedDays = new ArrayList<>();
+            if (repeatSunday.isChecked()) selectedDays.add(Calendar.SUNDAY);
+            if (repeatMonday.isChecked()) selectedDays.add(Calendar.MONDAY);
+            if (repeatTuesday.isChecked()) selectedDays.add(Calendar.TUESDAY);
+            if (repeatWednesday.isChecked()) selectedDays.add(Calendar.WEDNESDAY);
+            if (repeatThursday.isChecked()) selectedDays.add(Calendar.THURSDAY);
+            if (repeatFriday.isChecked()) selectedDays.add(Calendar.FRIDAY);
+            if (repeatSaturday.isChecked()) selectedDays.add(Calendar.SATURDAY);
 
-            // Add checked days to the list
-            if (repeatSunday.isChecked()) selectedDays.add("Sun");
-            if (repeatMonday.isChecked()) selectedDays.add("Mon");
-            if (repeatTuesday.isChecked()) selectedDays.add("Tue");
-            if (repeatWednesday.isChecked()) selectedDays.add("Wed");
-            if (repeatThursday.isChecked()) selectedDays.add("Thu");
-            if (repeatFriday.isChecked()) selectedDays.add("Fri");
-            if (repeatSaturday.isChecked()) selectedDays.add("Sat");
+            String repeatDaysString = TextUtils.join(",", selectedDays);
 
-            // Join the list into a comma-separated string
-            String repeatDays = TextUtils.join(",", selectedDays);
+            // Convert selected date-time string to milliseconds
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault());
+            long reminderTime = 0;
+            try {
+                Date date = sdf.parse(date_time);
+                if (date != null) {
+                    reminderTime = date.getTime();
+                }
+            } catch (ParseException | java.text.ParseException e) {
+                e.printStackTrace();
+            }
 
-            TaskDetails taskDetails = new TaskDetails(clientId, name, taskType, date_time, repeatDays, notes, filePath);
-
-            // Process the task details (e.g., save to a database)
+            TaskDetails taskDetails = new TaskDetails(clientId, name, taskType, date_time, repeatDaysString, notes, filePath);
             Toast.makeText(TaskActivity.this, "Task added: " + name, Toast.LENGTH_SHORT).show();
-
             uploadTaskToDb(taskDetails);
 
+            // Schedule notifications
+            if (selectedDays.isEmpty()) {
+                // One-time notification
+                scheduleNotification(name, notes, Collections.singletonList(Calendar.getInstance().get(Calendar.DAY_OF_WEEK)), reminderTime, taskDetails.getId());
+            } else {
+                // Repeating notifications
+                scheduleNotification(name, notes, selectedDays, reminderTime, taskDetails.getId());
+            }
+
             dialog.dismiss();
-
             populateList();
-
         });
 
         dialog.show();
     }
+
+    private void createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            CharSequence name = "TaskReminderChannel";
+            String description = "Channel for task reminder notifications";
+            int importance = NotificationManager.IMPORTANCE_HIGH;
+            NotificationChannel channel = new NotificationChannel("TASK_REMINDER", name, importance);
+            channel.setDescription(description);
+
+            NotificationManager notificationManager = getSystemService(NotificationManager.class);
+            notificationManager.createNotificationChannel(channel);
+        }
+    }
+
+    private void scheduleNotification(String taskTitle, String taskNotes, List<Integer> daysOfWeek, long reminderTime, int taskId) {
+        AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+
+        Calendar reminderCalendar = Calendar.getInstance();
+        reminderCalendar.setTimeInMillis(reminderTime); // Use user-selected time
+
+        for (int dayOfWeek : daysOfWeek) {
+            Calendar calendar = Calendar.getInstance();
+            calendar.set(Calendar.DAY_OF_WEEK, dayOfWeek);
+            calendar.set(Calendar.HOUR_OF_DAY, reminderCalendar.get(Calendar.HOUR_OF_DAY)); // Keep exact time
+            calendar.set(Calendar.MINUTE, reminderCalendar.get(Calendar.MINUTE));
+            calendar.set(Calendar.SECOND, 0);
+
+            // If the scheduled time has already passed for this week, set it for next week
+            if (calendar.getTimeInMillis() < System.currentTimeMillis()) {
+                calendar.add(Calendar.WEEK_OF_YEAR, 1);
+            }
+
+            Intent intent = new Intent(this, NotificationReceiver.class);
+            intent.putExtra("taskTitle", taskTitle);
+            intent.putExtra("taskNotes", taskNotes);
+            intent.putExtra("taskId", taskId);
+
+            int uniqueRequestCode = taskId * 10 + dayOfWeek; // Unique request code for each day
+            PendingIntent pendingIntent = PendingIntent.getBroadcast(
+                    this, uniqueRequestCode, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+            );
+
+            if (alarmManager != null) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), pendingIntent);
+                } else {
+                    alarmManager.setExact(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), pendingIntent);
+                }
+            }
+        }
+    }
+
+    private void cancelNotification(int taskId, List<Integer> daysOfWeek) {
+        AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+
+        for (int dayOfWeek : daysOfWeek) {
+            Intent intent = new Intent(this, NotificationReceiver.class);
+            int uniqueRequestCode = taskId * 10 + dayOfWeek;
+            PendingIntent pendingIntent = PendingIntent.getBroadcast(
+                    this, uniqueRequestCode, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+            );
+
+            if (alarmManager != null) {
+                alarmManager.cancel(pendingIntent);
+            }
+        }
+    }
+
 }

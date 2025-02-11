@@ -21,4 +21,8 @@ public class Task {
     @NonNull
     private String notes;
     private String filePath;
+
+    public @NonNull Integer getId() {
+        return id;
+    }
 }

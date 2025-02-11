@@ -22,4 +22,9 @@ public class TaskDetails {
         this.notes = notes;
         this.filePath = filePath;
     }
+
+    public int getId() {
+        return id;
+    }
+
 }
