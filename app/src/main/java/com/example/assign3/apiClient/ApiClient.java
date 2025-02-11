@@ -14,21 +14,30 @@ import com.example.assign3.apiClient.model.SignupResponse;
 import com.example.assign3.apiClient.model.Task;
 import com.example.assign3.apiClient.model.TaskDetails;
 
-import okhttp3.*;
+//import okhttp3.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 public class ApiClient {
-    private static final String SERVER_HOSTNAME = "http://10.0.2.2:5000";
+    private static final String SERVER_HOSTNAME = "10.0.2.2";
+    private static final int SERVER_PORT = 5000;
+
     private static final String SIGNUP_ENDPOINT = "/signup";
     private static final String LOGIN_ENDPOINT = "/login";
-    private static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
-    private final OkHttpClient client = new OkHttpClient();
+    private static final String CLIENTS_ENDPOINT = "/clients";
+    private static final String TASKS_ENDPOINT = "/tasks";
+//    private static final String LOGIN_ENDPOINT = "/login";
+//    private static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
+//    private final OkHttpClient client = new OkHttpClient();
     private static ApiClient instance;
 
     private ApiClient() {}
@@ -40,29 +49,45 @@ public class ApiClient {
         return instance;
     }
 
-    private RequestBody getAuthRequestBody(String username, String password) throws Exception {
+    private String getAuthRequestBody(String username, String password) throws Exception {
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("username", username);
         jsonObject.put("password", password);
-        return RequestBody.create(jsonObject.toString(), JSON);
+        return jsonObject.toString();
     }
 
     public CompletableFuture<SignupResponse> signUpUser(String username, String password) {
         return CompletableFuture.supplyAsync(() -> {
             SignupResponse response = null;
-            try {
-                RequestBody body = getAuthRequestBody(username, password);
-                Request request = new Request.Builder()
-                        .url(SERVER_HOSTNAME + SIGNUP_ENDPOINT)
-                        .post(body)
-                        .build();
-                try (Response httpResponse = client.newCall(request).execute()) {
-                    JSONObject responseJson = new JSONObject(httpResponse.body().string());
-                    if (httpResponse.isSuccessful() && httpResponse.code() == 201) {
-                        response = new SignupResponse(responseJson.getString("message"), responseJson.getString("username"), 201);
-                    } else {
-                        response = new SignupResponse(responseJson.getString("message"), null, httpResponse.code());
-                    }
+            try (Socket socket = new Socket(SERVER_HOSTNAME, SERVER_PORT);
+                 PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+                 BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
+
+                String requestBody = getAuthRequestBody(username, password);
+                String httpRequest = "POST " + SIGNUP_ENDPOINT + " HTTP/1.1\r\n" +
+                        "Host: " + SERVER_HOSTNAME + "\r\n" +
+                        "Content-Type: application/json; charset=utf-8\r\n" +
+                        "Content-Length: " + requestBody.length() + "\r\n" +
+                        "\r\n" +
+                        requestBody;
+
+                out.println(httpRequest);
+
+                StringBuilder responseBuilder = new StringBuilder();
+                String line;
+                while ((line = in.readLine()) != null) {
+                    responseBuilder.append(line).append("\n");
+                }
+
+                String httpResponse = responseBuilder.toString();
+                int statusCode = Integer.parseInt(httpResponse.split(" ")[1]);
+                String responseBody = httpResponse.split("\n\n")[1];
+                JSONObject responseJson = new JSONObject(responseBody);
+
+                if (statusCode == 201) {
+                    response = new SignupResponse(responseJson.getString("message"), responseJson.getString("username"), 201);
+                } else {
+                    response = new SignupResponse(responseJson.getString("message"), null, statusCode);
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -75,19 +100,35 @@ public class ApiClient {
     public CompletableFuture<LoginResponse> loginUser(String username, String password) {
         return CompletableFuture.supplyAsync(() -> {
             LoginResponse response = null;
-            try {
-                RequestBody body = getAuthRequestBody(username, password);
-                Request request = new Request.Builder()
-                        .url(SERVER_HOSTNAME + LOGIN_ENDPOINT)
-                        .post(body)
-                        .build();
-                try (Response httpResponse = client.newCall(request).execute()) {
-                    JSONObject responseJson = new JSONObject(httpResponse.body().string());
-                    if (httpResponse.isSuccessful() && httpResponse.code() == 200) {
-                        response = new LoginResponse(responseJson.getString("message"), responseJson.getString("token"), 200);
-                    } else {
-                        response = new LoginResponse(responseJson.getString("message"), null, httpResponse.code());
-                    }
+            try (Socket socket = new Socket(SERVER_HOSTNAME, SERVER_PORT);
+                 PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+                 BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
+
+                String requestBody = getAuthRequestBody(username, password);
+                String httpRequest = "POST " + LOGIN_ENDPOINT + " HTTP/1.1\r\n" +
+                        "Host: " + SERVER_HOSTNAME + "\r\n" +
+                        "Content-Type: application/json; charset=utf-8\r\n" +
+                        "Content-Length: " + requestBody.length() + "\r\n" +
+                        "\r\n" +
+                        requestBody;
+
+                out.println(httpRequest);
+
+                StringBuilder responseBuilder = new StringBuilder();
+                String line;
+                while ((line = in.readLine()) != null) {
+                    responseBuilder.append(line).append("\n");
+                }
+
+                String httpResponse = responseBuilder.toString();
+                int statusCode = Integer.parseInt(httpResponse.split(" ")[1]);
+                String responseBody = httpResponse.split("\n\n")[1];
+                JSONObject responseJson = new JSONObject(responseBody);
+
+                if (statusCode == 200) {
+                    response = new LoginResponse(responseJson.getString("message"), responseJson.getString("token"), 200);
+                } else {
+                    response = new LoginResponse(responseJson.getString("message"), null, statusCode);
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -100,30 +141,41 @@ public class ApiClient {
     public CompletableFuture<List<Client>> getClients(String token) {
         return CompletableFuture.supplyAsync(() -> {
             List<Client> clients = new ArrayList<>();
-            try {
-                Request request = new Request.Builder()
-                        .url(SERVER_HOSTNAME + "/clients")
-                        .addHeader("Authorization", token)
-                        .build();
-                try (Response httpResponse = client.newCall(request).execute()) {
-                    if (httpResponse.isSuccessful() && httpResponse.code() == 200) {
-                        JSONArray responseJson = new JSONArray(httpResponse.body().string());
-                        for (int i = 0; i < responseJson.length(); i++) {
-                            JSONObject clientJson = responseJson.getJSONObject(i);
-                            clients.add(new Client(
-                                    covertToBitmap(clientJson.getString("thumbnail")),
-                                    Integer.parseInt(clientJson.getString("client_id")),
-                                    clientJson.getString("first_name"),
-                                    clientJson.getString("last_name"),
-                                    clientJson.getString("address"),
-                                    clientJson.getInt("age"),
-                                    clientJson.getString("status")
-                                    )
-                            );
-                        }
+            try (Socket socket = new Socket(SERVER_HOSTNAME, SERVER_PORT);
+                 PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+                 BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
+
+                String httpRequest = "GET " + CLIENTS_ENDPOINT + " HTTP/1.1\r\n" +
+                        "Host: " + SERVER_HOSTNAME + "\r\n" +
+                        "Authorization: " + token + "\r\n" +
+                        "\r\n";
+
+                out.println(httpRequest);
+
+                StringBuilder responseBuilder = new StringBuilder();
+                String line;
+                while ((line = in.readLine()) != null) {
+                    responseBuilder.append(line).append("\n");
+                }
+
+                String httpResponse = responseBuilder.toString();
+                int statusCode = Integer.parseInt(httpResponse.split(" ")[1]);
+                String responseBody = httpResponse.split("\n\n")[1];
+                JSONArray responseJson = new JSONArray(responseBody);
+
+                if (statusCode == 200) {
+                    for (int i = 0; i < responseJson.length(); i++) {
+                        JSONObject clientJson = responseJson.getJSONObject(i);
+                        clients.add(new Client(
+                                covertToBitmap(clientJson.getString("thumbnail")),
+                                clientJson.getInt("client_id"),
+                                clientJson.getString("first_name"),
+                                clientJson.getString("last_name"),
+                                clientJson.getString("address"),
+                                clientJson.getInt("age"),
+                                clientJson.getString("status")
+                        ));
                     }
-                } catch (Exception e) {
-                    e.printStackTrace();
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -135,29 +187,40 @@ public class ApiClient {
     public CompletableFuture<ClientDetails> getClientDetails(int clientId, String token) {
         return CompletableFuture.supplyAsync(() -> {
             ClientDetails item = null;
-            try {
-                Request request = new Request.Builder()
-                        .url(SERVER_HOSTNAME + "/clients/" + clientId)
-                        .addHeader("Authorization", token)
-                        .build();
-                try {
-                    Response httpResponse = client.newCall(request).execute();
-                    if (httpResponse.isSuccessful() && httpResponse.code() == 200) {
-                        JSONObject clientJson = new JSONObject(httpResponse.body().string());
-                        item = new ClientDetails(
-                                covertToBitmap(clientJson.getString("photo")),
-                                covertToBitmap(clientJson.getString("thumbnail")),
-                                clientJson.getString("first_name"),
-                                clientJson.getString("last_name"),
-                                clientJson.getString("address"),
-                                clientJson.getString("status"),
-                                clientJson.getInt("age"),
-                                clientJson.getString("email"),
-                                clientJson.getString("phone")
-                        );
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
+            try (Socket socket = new Socket(SERVER_HOSTNAME, SERVER_PORT);
+                 PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+                 BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
+
+                String httpRequest = "GET " + CLIENTS_ENDPOINT + "/" + clientId + " HTTP/1.1\r\n" +
+                        "Host: " + SERVER_HOSTNAME + "\r\n" +
+                        "Authorization: " + token + "\r\n" +
+                        "\r\n";
+
+                out.println(httpRequest);
+
+                StringBuilder responseBuilder = new StringBuilder();
+                String line;
+                while ((line = in.readLine()) != null) {
+                    responseBuilder.append(line).append("\n");
+                }
+
+                String httpResponse = responseBuilder.toString();
+                int statusCode = Integer.parseInt(httpResponse.split(" ")[1]);
+                String responseBody = httpResponse.split("\n\n")[1];
+                JSONObject clientJson = new JSONObject(responseBody);
+
+                if (statusCode == 200) {
+                    item = new ClientDetails(
+                            covertToBitmap(clientJson.getString("photo")),
+                            covertToBitmap(clientJson.getString("thumbnail")),
+                            clientJson.getString("first_name"),
+                            clientJson.getString("last_name"),
+                            clientJson.getString("address"),
+                            clientJson.getString("status"),
+                            clientJson.getInt("age"),
+                            clientJson.getString("email"),
+                            clientJson.getString("phone")
+                    );
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -169,34 +232,48 @@ public class ApiClient {
     public CompletableFuture<ClientDetails> updateClientStatus(int clientId, String token, String status) {
         return CompletableFuture.supplyAsync(() -> {
             ClientDetails item = null;
-            try {
+            try (Socket socket = new Socket(SERVER_HOSTNAME, SERVER_PORT);
+                 PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+                 BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
+
                 JSONObject jsonObject = new JSONObject();
                 jsonObject.put("status", status);
-                RequestBody body = RequestBody.create(jsonObject.toString(), JSON);
-                Request request = new Request.Builder()
-                        .url(SERVER_HOSTNAME + "/clients/" + clientId)
-                        .addHeader("Authorization", token)
-                        .patch(body)
-                        .build();
-                try (Response httpResponse = client.newCall(request).execute()) {
-                    if (httpResponse.isSuccessful() && httpResponse.code() == 200) {
-                        JSONObject responseJson = new JSONObject(httpResponse.body().string());
-                        JSONObject clientJson = responseJson.getJSONObject("client");
-                        JSONObject clientDetailsJson = clientJson.getJSONObject("client_details");
-                        item = new ClientDetails(
-                                covertToBitmap(clientJson.getString("photo")),
-                                covertToBitmap(clientJson.getString("thumbnail")),
-                                clientJson.getString("first_name"),
-                                clientJson.getString("last_name"),
-                                clientJson.getString("address"),
-                                clientJson.getString("status"),
-                                clientDetailsJson.getInt("age"),
-                                clientDetailsJson.getString("email"),
-                                clientDetailsJson.getString("phone")
-                        );
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
+                String requestBody = jsonObject.toString();
+                String httpRequest = "PATCH " + CLIENTS_ENDPOINT + "/" + clientId + " HTTP/1.1\r\n" +
+                        "Host: " + SERVER_HOSTNAME + "\r\n" +
+                        "Authorization: " + token + "\r\n" +
+                        "Content-Type: application/json; charset=utf-8\r\n" +
+                        "Content-Length: " + requestBody.length() + "\r\n" +
+                        "\r\n" +
+                        requestBody;
+
+                out.println(httpRequest);
+
+                StringBuilder responseBuilder = new StringBuilder();
+                String line;
+                while ((line = in.readLine()) != null) {
+                    responseBuilder.append(line).append("\n");
+                }
+
+                String httpResponse = responseBuilder.toString();
+                int statusCode = Integer.parseInt(httpResponse.split(" ")[1]);
+                String responseBody = httpResponse.split("\n\n")[1];
+                JSONObject responseJson = new JSONObject(responseBody);
+                JSONObject clientJson = responseJson.getJSONObject("client");
+                JSONObject clientDetailsJson = clientJson.getJSONObject("client_details");
+
+                if (statusCode == 200) {
+                    item = new ClientDetails(
+                            covertToBitmap(clientJson.getString("photo")),
+                            covertToBitmap(clientJson.getString("thumbnail")),
+                            clientJson.getString("first_name"),
+                            clientJson.getString("last_name"),
+                            clientJson.getString("address"),
+                            clientJson.getString("status"),
+                            clientDetailsJson.getInt("age"),
+                            clientDetailsJson.getString("email"),
+                            clientDetailsJson.getString("phone")
+                    );
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -209,7 +286,10 @@ public class ApiClient {
         return CompletableFuture.supplyAsync(() -> {
             ClientDetails item = null;
             int responseCode = 500;
-            try {
+            try (Socket socket = new Socket(SERVER_HOSTNAME, SERVER_PORT);
+                 PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+                 BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
+
                 JSONObject jsonObject = new JSONObject();
                 jsonObject.put("first_name", clientDetails.getFirstName());
                 jsonObject.put("last_name", clientDetails.getLastName());
@@ -220,28 +300,40 @@ public class ApiClient {
                 jsonObject.put("phone", clientDetails.getPhone());
                 jsonObject.put("photo", convertToString(clientDetails.getDecodedBitmap()));
                 jsonObject.put("thumbnail", convertToString(Bitmap.createScaledBitmap(clientDetails.getDecodedBitmap(), 100, 100, false)));
-                RequestBody body = RequestBody.create(jsonObject.toString(), JSON);
-                Request request = new Request.Builder()
-                        .url(SERVER_HOSTNAME + "/clients")
-                        .addHeader("Authorization", token)
-                        .post(body)
-                        .build();
-                try (Response httpResponse = client.newCall(request).execute()) {
-                    responseCode = httpResponse.code();
-                    if (httpResponse.isSuccessful() && httpResponse.code() == 200) {
-                        JSONObject clientJson = new JSONObject(httpResponse.body().string());
-                        item = new ClientDetails(
-                                covertToBitmap(clientJson.getString("photo")),
-                                covertToBitmap(clientJson.getString("thumbnail")),
-                                clientJson.getString("first_name"),
-                                clientJson.getString("last_name"),
-                                clientJson.getString("address"),
-                                clientJson.getString("status"),
-                                clientJson.getInt("age"),
-                                clientJson.getString("email"),
-                                clientJson.getString("phone")
-                        );
-                    }
+                String requestBody = jsonObject.toString();
+                String httpRequest = "POST " + CLIENTS_ENDPOINT + " HTTP/1.1\r\n" +
+                        "Host: " + SERVER_HOSTNAME + "\r\n" +
+                        "Authorization: " + token + "\r\n" +
+                        "Content-Type: application/json; charset=utf-8\r\n" +
+                        "Content-Length: " + requestBody.length() + "\r\n" +
+                        "\r\n" +
+                        requestBody;
+
+                out.println(httpRequest);
+
+                StringBuilder responseBuilder = new StringBuilder();
+                String line;
+                while ((line = in.readLine()) != null) {
+                    responseBuilder.append(line).append("\n");
+                }
+
+                String httpResponse = responseBuilder.toString();
+                responseCode = Integer.parseInt(httpResponse.split(" ")[1]);
+                String responseBody = httpResponse.split("\n\n")[1];
+                JSONObject clientJson = new JSONObject(responseBody);
+
+                if (responseCode == 200) {
+                    item = new ClientDetails(
+                            covertToBitmap(clientJson.getString("photo")),
+                            covertToBitmap(clientJson.getString("thumbnail")),
+                            clientJson.getString("first_name"),
+                            clientJson.getString("last_name"),
+                            clientJson.getString("address"),
+                            clientJson.getString("status"),
+                            clientJson.getInt("age"),
+                            clientJson.getString("email"),
+                            clientJson.getString("phone")
+                    );
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -255,7 +347,10 @@ public class ApiClient {
         return CompletableFuture.supplyAsync(() -> {
             TaskDetails item = null;
             int responseCode = 500;
-            try {
+            try (Socket socket = new Socket(SERVER_HOSTNAME, SERVER_PORT);
+                 PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+                 BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
+
                 JSONObject jsonObject = new JSONObject();
                 jsonObject.put("client_id", taskDetails.getClientId());
                 jsonObject.put("reminder_name", taskDetails.getReminderName());
@@ -264,17 +359,76 @@ public class ApiClient {
                 jsonObject.put("repeat_days", taskDetails.getRepeatDays());
                 jsonObject.put("notes", taskDetails.getNotes());
                 jsonObject.put("file_path", taskDetails.getFilePath());
-                RequestBody body = RequestBody.create(jsonObject.toString(), JSON);
-                Request request = new Request.Builder()
-                        .url(SERVER_HOSTNAME + "/tasks")
-                        .addHeader("Authorization", token)
-                        .post(body)
-                        .build();
-                try (Response httpResponse = client.newCall(request).execute()) {
-                    responseCode = httpResponse.code();
-                    if (httpResponse.isSuccessful() && httpResponse.code() == 200) {
-                        JSONObject taskJson = new JSONObject(httpResponse.body().string());
-                        item = new TaskDetails(
+                String requestBody = jsonObject.toString();
+                String httpRequest = "POST " + TASKS_ENDPOINT + " HTTP/1.1\r\n" +
+                        "Host: " + SERVER_HOSTNAME + "\r\n" +
+                        "Authorization: " + token + "\r\n" +
+                        "Content-Type: application/json; charset=utf-8\r\n" +
+                        "Content-Length: " + requestBody.length() + "\r\n" +
+                        "\r\n" +
+                        requestBody;
+
+                out.println(httpRequest);
+
+                StringBuilder responseBuilder = new StringBuilder();
+                String line;
+                while ((line = in.readLine()) != null) {
+                    responseBuilder.append(line).append("\n");
+                }
+
+                String httpResponse = responseBuilder.toString();
+                responseCode = Integer.parseInt(httpResponse.split(" ")[1]);
+                String responseBody = httpResponse.split("\n\n")[1];
+                JSONObject taskJson = new JSONObject(responseBody);
+
+                if (responseCode == 200) {
+                    item = new TaskDetails(
+                            taskJson.getInt("client_id"),
+                            taskJson.getString("reminder_name"),
+                            taskJson.getString("task_type"),
+                            taskJson.getString("date_time"),
+                            taskJson.getString("repeat_days"),
+                            taskJson.getString("notes"),
+                            taskJson.getString("file_path")
+                    );
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return new PostTaskResponse(item, responseCode);
+        });
+    }
+
+    public CompletableFuture<List<Task>> getTasks(int clientId, String token) {
+        return CompletableFuture.supplyAsync(() -> {
+            List<Task> tasks = new ArrayList<>();
+            try (Socket socket = new Socket(SERVER_HOSTNAME, SERVER_PORT);
+                 PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+                 BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
+
+                String httpRequest = "GET " + TASKS_ENDPOINT + "/pending/" + clientId + " HTTP/1.1\r\n" +
+                        "Host: " + SERVER_HOSTNAME + "\r\n" +
+                        "Authorization: " + token + "\r\n" +
+                        "\r\n";
+
+                out.println(httpRequest);
+
+                StringBuilder responseBuilder = new StringBuilder();
+                String line;
+                while ((line = in.readLine()) != null) {
+                    responseBuilder.append(line).append("\n");
+                }
+
+                String httpResponse = responseBuilder.toString();
+                int statusCode = Integer.parseInt(httpResponse.split(" ")[1]);
+                String responseBody = httpResponse.split("\n\n")[1];
+                JSONArray responseJson = new JSONArray(responseBody);
+
+                if (statusCode == 200) {
+                    for (int i = 0; i < responseJson.length(); i++) {
+                        JSONObject taskJson = responseJson.getJSONObject(i);
+                        tasks.add(new Task(
+                                taskJson.getInt("id"),
                                 taskJson.getInt("client_id"),
                                 taskJson.getString("reminder_name"),
                                 taskJson.getString("task_type"),
@@ -282,44 +436,8 @@ public class ApiClient {
                                 taskJson.getString("repeat_days"),
                                 taskJson.getString("notes"),
                                 taskJson.getString("file_path")
-                        );
+                        ));
                     }
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            return new PostTaskResponse(item, responseCode);
-        });
-
-    }
-
-    public CompletableFuture<List<Task>> getTasks(int clientId, String token) {
-        return CompletableFuture.supplyAsync(() -> {
-            List<Task> tasks = new ArrayList<>();
-            try {
-                Request request = new Request.Builder()
-                        .url(SERVER_HOSTNAME + "/tasks/pending/" + clientId)
-                        .addHeader("Authorization", token)
-                        .build();
-                try (Response httpResponse = client.newCall(request).execute()) {
-                    if (httpResponse.isSuccessful() && httpResponse.code() == 200) {
-                        JSONArray responseJson = new JSONArray(httpResponse.body().string());
-                        for (int i = 0; i < responseJson.length(); i++) {
-                            JSONObject taskJson = responseJson.getJSONObject(i);
-                            tasks.add(new Task(
-                                    taskJson.getInt("id"),
-                                    taskJson.getInt("client_id"),
-                                    taskJson.getString("reminder_name"),
-                                    taskJson.getString("task_type"),
-                                    taskJson.getString("date_time"),
-                                    taskJson.getString("repeat_days"),
-                                    taskJson.getString("notes"),
-                                    taskJson.getString("file_path")
-                            ));
-                        }
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -331,27 +449,38 @@ public class ApiClient {
     public CompletableFuture<TaskDetails> getTaskDetails(int taskId, String token) {
         return CompletableFuture.supplyAsync(() -> {
             TaskDetails item = null;
-            try {
-                Request request = new Request.Builder()
-                        .url(SERVER_HOSTNAME + "/tasks/" + taskId)
-                        .addHeader("Authorization", token)
-                        .build();
-                try {
-                    Response httpResponse = client.newCall(request).execute();
-                    if (httpResponse.isSuccessful() && httpResponse.code() == 200) {
-                        JSONObject taskJson = new JSONObject(httpResponse.body().string());
-                        item = new TaskDetails(
-                                taskJson.getInt("client_id"),
-                                taskJson.getString("reminder_name"),
-                                taskJson.getString("task_type"),
-                                taskJson.getString("date_time"),
-                                taskJson.getString("repeat_days"),
-                                taskJson.getString("notes"),
-                                taskJson.getString("file_path")
-                        );
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
+            try (Socket socket = new Socket(SERVER_HOSTNAME, SERVER_PORT);
+                 PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+                 BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
+
+                String httpRequest = "GET " + TASKS_ENDPOINT + "/" + taskId + " HTTP/1.1\r\n" +
+                        "Host: " + SERVER_HOSTNAME + "\r\n" +
+                        "Authorization: " + token + "\r\n" +
+                        "\r\n";
+
+                out.println(httpRequest);
+
+                StringBuilder responseBuilder = new StringBuilder();
+                String line;
+                while ((line = in.readLine()) != null) {
+                    responseBuilder.append(line).append("\n");
+                }
+
+                String httpResponse = responseBuilder.toString();
+                int statusCode = Integer.parseInt(httpResponse.split(" ")[1]);
+                String responseBody = httpResponse.split("\n\n")[1];
+                JSONObject taskJson = new JSONObject(responseBody);
+
+                if (statusCode == 200) {
+                    item = new TaskDetails(
+                            taskJson.getInt("client_id"),
+                            taskJson.getString("reminder_name"),
+                            taskJson.getString("task_type"),
+                            taskJson.getString("date_time"),
+                            taskJson.getString("repeat_days"),
+                            taskJson.getString("notes"),
+                            taskJson.getString("file_path")
+                    );
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -362,24 +491,36 @@ public class ApiClient {
 
 //    Delete Task
     public CompletableFuture<Void> deleteTask(String token, int taskId) {
-        return CompletableFuture.supplyAsync(() -> {
-            try {
-                Request request = new Request.Builder()
-                        .url(SERVER_HOSTNAME + "/tasks/" + taskId)
-                        .addHeader("Authorization", token)
-                        .delete()
-                        .build();
-                try (Response httpResponse = client.newCall(request).execute()) {
-                    if (httpResponse.isSuccessful() && httpResponse.code() == 200) {
-                        return null;
-                    }
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
+    return CompletableFuture.supplyAsync(() -> {
+        try (Socket socket = new Socket(SERVER_HOSTNAME, SERVER_PORT);
+             PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+             BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
+
+            String httpRequest = "DELETE " + TASKS_ENDPOINT + "/" + taskId + " HTTP/1.1\r\n" +
+                    "Host: " + SERVER_HOSTNAME + "\r\n" +
+                    "Authorization: " + token + "\r\n" +
+                    "\r\n";
+
+            out.println(httpRequest);
+
+            StringBuilder responseBuilder = new StringBuilder();
+            String line;
+            while ((line = in.readLine()) != null) {
+                responseBuilder.append(line).append("\n");
             }
-            return null;
-        });
-    }
+
+            String httpResponse = responseBuilder.toString();
+            int statusCode = Integer.parseInt(httpResponse.split(" ")[1]);
+
+            if (statusCode != 200) {
+                throw new Exception("Failed to delete task, status code: " + statusCode);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    });
+}
 
     private static Bitmap covertToBitmap(String base64String) {
         try {
